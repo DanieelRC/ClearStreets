@@ -200,7 +200,9 @@ begin
   where i.clase = p_clase
     and i.estado <> 'resuelto'
     and extensions.st_dwithin(i.geom::extensions.geography, v_punto::extensions.geography, v_radio)
-  order by i.geom operator(extensions.<->) v_punto
+  -- st_distance y no el operador KNN <->: con FOR UPDATE, el recorrido KNN del índice puede
+  -- devolver una versión vieja de la fila ("attempted to lock invisible tuple").
+  order by extensions.st_distance(i.geom::extensions.geography, v_punto::extensions.geography)
   limit 1
   for update;
 
@@ -308,6 +310,8 @@ create policy "seguimientos propios" on public.seguimientos for all
 create policy "tokens propios" on public.dispositivos_push for all
   using (usuario_id = auth.uid()) with check (usuario_id = auth.uid());
 
+-- Supabase concede EXECUTE a anon en toda función nueva de public: se revoca explícitamente.
+revoke execute on function public.registrar_deteccion from public, anon;
 grant execute on function public.registrar_deteccion to authenticated;
 grant execute on function public.incidencias_cercanas to anon, authenticated;
 

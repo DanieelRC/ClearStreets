@@ -114,6 +114,7 @@ returns bigint language sql security invoker set search_path = '' as $$
   values (auth.uid(), extensions.st_setsrid(extensions.st_makepoint(p_lng, p_lat), 4326), p_radio_m)
   returning id
 $$;
+revoke execute on function public.seguir_zona from public, anon;
 grant execute on function public.seguir_zona to authenticated;
 
 create function public.mis_seguimientos()
@@ -133,4 +134,5 @@ language sql stable security invoker set search_path = '' as $$
   where s.usuario_id = auth.uid()
   order by s.id desc
 $$;
+revoke execute on function public.mis_seguimientos from public, anon;
 grant execute on function public.mis_seguimientos to authenticated;

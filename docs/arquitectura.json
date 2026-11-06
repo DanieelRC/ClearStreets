@@ -1,0 +1,233 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "ClearStreets — Arquitectura app Android",
+    "quality_profile": "showcase"
+  },
+  "layout": {
+    "mode": "grid",
+    "cols": 4,
+    "origin": [
+      60,
+      80
+    ],
+    "cellW": 160,
+    "cellH": 64,
+    "gapX": 150,
+    "gapY": 96
+  },
+  "components": [
+    {
+      "id": "camara",
+      "type": "frontend",
+      "label": "Cámara en vivo",
+      "sublabel": "VisionCamera",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "detector",
+      "type": "frontend",
+      "label": "Detector YOLO",
+      "sublabel": "TFLite en dispositivo",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "panel",
+      "type": "external",
+      "label": "Panel alcaldías",
+      "sublabel": "web, fuera de alcance",
+      "row": 0,
+      "col": 3
+    },
+    {
+      "id": "anonimizador",
+      "type": "security",
+      "label": "Anonimizador",
+      "sublabel": "rostros y placas",
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "rpc",
+      "type": "backend",
+      "label": "RPC PostGIS",
+      "sublabel": "registrar_deteccion",
+      "row": 1,
+      "col": 2
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "PostgreSQL",
+      "sublabel": "PostGIS + RLS",
+      "row": 1,
+      "col": 3
+    },
+    {
+      "id": "ciudadano",
+      "type": "frontend",
+      "label": "Modo ciudadano",
+      "sublabel": "mapa, alertas, rutas",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "cola",
+      "type": "database",
+      "label": "Cola local",
+      "sublabel": "SQLite + archivos",
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "storage",
+      "type": "database",
+      "label": "Storage",
+      "sublabel": "evidencias privadas",
+      "row": 2,
+      "col": 2
+    },
+    {
+      "id": "edge",
+      "type": "backend",
+      "label": "Edge Functions",
+      "sublabel": "push + pg_cron",
+      "row": 2,
+      "col": 3
+    },
+    {
+      "id": "mapbox",
+      "type": "external",
+      "label": "Mapbox",
+      "sublabel": "mapas y Directions",
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "fcm",
+      "type": "external",
+      "label": "FCM",
+      "sublabel": "notificaciones",
+      "row": 3,
+      "col": 1
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "App Android · React Native + Expo",
+      "wraps": [
+        "camara",
+        "detector",
+        "anonimizador",
+        "cola",
+        "ciudadano"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Supabase",
+      "wraps": [
+        "rpc",
+        "db",
+        "storage",
+        "edge"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "camara",
+      "to": "detector",
+      "label": "fotogramas"
+    },
+    {
+      "from": "detector",
+      "to": "anonimizador",
+      "label": "detección + GPS",
+      "labelDy": 24
+    },
+    {
+      "from": "anonimizador",
+      "to": "cola",
+      "label": "evidencia",
+      "labelDy": 24
+    },
+    {
+      "from": "cola",
+      "to": "rpc",
+      "label": "sync HTTPS"
+    },
+    {
+      "from": "cola",
+      "to": "storage",
+      "label": "JPEG",
+      "labelDy": 16
+    },
+    {
+      "from": "rpc",
+      "to": "db",
+      "label": "agrupa ≤10 m"
+    },
+    {
+      "from": "panel",
+      "to": "db",
+      "label": "cambia estado",
+      "variant": "dashed",
+      "labelDy": 24
+    },
+    {
+      "from": "db",
+      "to": "edge",
+      "label": "trigger",
+      "labelDy": 24
+    },
+    {
+      "from": "edge",
+      "to": "fcm",
+      "label": "push"
+    },
+    {
+      "from": "fcm",
+      "to": "ciudadano",
+      "label": "aviso"
+    },
+    {
+      "from": "ciudadano",
+      "to": "mapbox",
+      "label": "mapa y rutas",
+      "labelDy": 24
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "En el dispositivo",
+      "items": [
+        "Modelos preentrenados tal cual (baches y basura)",
+        "Severidad por área de la caja",
+        "Sin red: cola SQLite y reintentos"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "En Supabase",
+      "items": [
+        "Agrupa detecciones a ≤10 m",
+        "Asigna alcaldía por polígono",
+        "Retención limitada de evidencias"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Privacidad",
+      "items": [
+        "Rostros y placas difuminados antes de guardar",
+        "Nunca se sube video"
+      ]
+    }
+  ]
+}

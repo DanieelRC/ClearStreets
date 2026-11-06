@@ -1,0 +1,8 @@
+# Configuración de funciones para `supabase functions deploy`.
+
+[functions.notificar]
+# La llama el trigger de la base con PUSH_SECRET, no un usuario: sin verificación de JWT.
+verify_jwt = false
+
+[functions.eliminar-cuenta]
+verify_jwt = true
